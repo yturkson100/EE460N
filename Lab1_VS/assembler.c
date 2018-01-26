@@ -8,4 +8,7 @@ int main() {
 	printf("hopefully, this works. GG\n");
 
 	printf("My turn");	//Farhan
+	
+	printf(" ");
+
 }
