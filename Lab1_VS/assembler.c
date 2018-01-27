@@ -1,12 +1,9 @@
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdio.h> /* standard input/output library */
 #include <stdlib.h> /* Standard C Library */
 #include <string.h> /* String operations library */
 #include <ctype.h> /* Library for useful character operations */
 #include <limits.h> /* Library for definitions of common variable type characteristics */
+#include <stdbool.h>
 
 const char *opcode[] = { "add","and","halt","jmp","jsr","jsrr","ldb","ldw","lea","nop","not","ret","lshf", "rshfl",
 "rshfa","rti","stb","stw","trap","xor","brn","brzp","brz","brnp","brp","brnz","br","brnzp" };
@@ -14,6 +11,17 @@ const char *opcode[] = { "add","and","halt","jmp","jsr","jsrr","ldb","ldw","lea"
 enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
+
+struct symbol {
+	char label[21];
+	int address;
+};
+
+struct table {
+	int size;
+	struct symbol* symbolarr;
+};
+
 
 int parseArgs(int argc, char* argv[]) {
 	if (argc == 3) {
@@ -28,16 +36,18 @@ int parseArgs(int argc, char* argv[]) {
 		printf("program name = '%s'\n", prgName);
 		printf("input file name = '%s'\n", iFileName);
 		printf("output file name = '%s'\n", oFileName);
+		fflush(stdout);
 
 		return 1;
 
 	}
 	else {
 		printf("invalid number of inputs\n");
+		fflush(stdout);
 		return 0;
 	}
 }
-
+/*          check functions */
 int isOpcode(char* text) {
 	for (int i = 0; i<28; i++) {
 		if (!strcmp(text, opcode[i])) {
@@ -46,6 +56,43 @@ int isOpcode(char* text) {
 	}
 
 	return -1;
+}
+
+int isLabel(char * str) {
+
+	const char *invalidLabel[] = { "in", "out", "getc", "puts" };
+
+	// Length Check
+	if (strlen(str) > 20) {
+		return 0;
+	}
+
+	// First character can't be an x
+	if (str[0] == 'x') {
+		return 0;
+	}
+
+	// Cant be an opcode
+	if (isOpcode(str) == 1) {
+		return 0;
+	}
+
+	// Cant be certain words
+	for (int i = 0; i<4; i++) {
+		if (strcmp(str, invalidLabel[i])) {
+			return 0;
+		}
+	}
+
+	// Has to be alpha numeric
+	for (int i = 0; i < strlen(str); i++) {
+		if (!isalpha(str[i]) || !isdigit(str)) {
+			return 0;
+		}
+	}
+
+	return 1;
+
 }
 
 int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
@@ -64,8 +111,7 @@ int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	/* ignore the comments */
 	lPtr = pLine;
 
-	while (*lPtr != ';' && *lPtr != '\0' &&
-		*lPtr != '\n')
+	while (*lPtr != ';' && *lPtr != '\0' && *lPtr != '\n')
 		lPtr++;
 
 	*lPtr = '\0';
@@ -98,10 +144,58 @@ int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	return(OK);
 }
 
+struct table* firstParse() {
+	int count = 0;
+	int startflag = 0;
+	int endflag = 0;
+
+	struct table* symboltable = (struct table*)malloc(sizeof(struct table));
+	(*symboltable).size = 0;
+	(*symboltable).symbolarr = (struct symbol*)malloc(7 * sizeof(struct symbol));
+
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
+		*lArg2, *lArg3, *lArg4;
+
+	int lRet;
+
+	//FILE * lInfile;
+
+	//lInfile = fopen( "data.in", "r" );        /* open the input file */
+
+	do
+	{
+		lRet = readAndParse(infile, lLine, &lLabel, &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
+
+		if (!strcmp(".end", lOpcode) && startflag == 1) {
+			endflag = 1;
+		}
+
+		if (lRet != DONE && lRet != EMPTY_LINE && startflag == 1 && endflag == 0) {
+			//...
+			count++;
+
+			if (strcmp(lLabel, "")) {
+				if (isLabel(lLabel) == 0) { exit(1); }
+			}
+
+			(*symboltable).symbolarr[(*symboltable).size].address = count;
+			strcpy(&(*symboltable).symbolarr[(*symboltable).size].label, lLabel);
+			printf("line parsed %i \n", count);
+			fflush(stdout);
+			//....
+		}
+
+		if (!strcmp(".orig", lOpcode) && endflag == 0) {
+			startflag = 1;
+		}
+
+	} while (lRet != DONE);
+}
 
 int main(int argc, char* argv[]) {
 	if (parseArgs(argc, argv)) {
 		/* open the source file */
+		//fflush(stdout);
 		infile = fopen(argv[1], "r");
 		outfile = fopen(argv[2], "w");
 
@@ -115,8 +209,10 @@ int main(int argc, char* argv[]) {
 		}
 
 		/* Do stuff with files */
+		//-----get the symbol table----------
+		struct table* symbolTable = firstParse();
 		printf("successfully did things with files\n");
-
+		//---------------------------------------------------------------------------------------
 		fclose(infile);
 		fclose(outfile);
 
