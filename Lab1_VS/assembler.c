@@ -126,19 +126,29 @@ int isLabel(char * str) {
 
 	const char *invalidLabel[] = { "in", "out", "getc", "puts" };
 
+	// Length Check
 	if (strlen(str) > 20) {
 		return 0;
 	}
 
+	// First character can't be an x
 	if (str[0] == 'x') {
 		return 0;
 	}
 
-	for (int i = 0; i<3; i++) {
+	// Cant be an opcode
+	if (isOpcode(str)) {
+		return 0;
+	}
+
+	// Cant be certain words
+	for (int i = 0; i<4; i++) {
 		if (strcmp(str, invalidLabel[i])) {
 			return 0;
 		}
 	}
+
+	// Has to be alpha numeric
 	for (int i = 0; i < strlen(str); i++) {
 		if (!isalpha(str[i]) || !isdigit(str)) {
 			return 0;
@@ -157,7 +167,7 @@ int isLabel(char * str) {
 void firstParse() {			// Is that the correct parameter?
 
 	// -------------- Call ReadAndParse() from website ------------
-	// Probably needs modifying
+
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
 		*lArg2, *lArg3, *lArg4;
 
@@ -175,13 +185,13 @@ void firstParse() {			// Is that the correct parameter?
 			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
 		if (lRet != DONE && lRet != EMPTY_LINE)
 		{
-			/*
 
 			if(isLabel(*lLabel)) {
-				createSymbolTable();
+				printf("createSymbolTable(%s);",*lLabel);
+				//createSymbolTable();
 			}
 
-			*/
+			
 		}
 	} while (lRet != DONE);
 
