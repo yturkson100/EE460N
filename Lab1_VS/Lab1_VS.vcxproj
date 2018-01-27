@@ -149,12 +149,6 @@
   <ItemGroup>
     <ClCompile Include="assembler.c" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="source.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="output.obj" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
