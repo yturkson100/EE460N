@@ -113,6 +113,10 @@ int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	return(OK);
 }
 
+void callReadAndParse() {
+	
+}
+
 // ********************** MAIN ************************************
 int main(int argc, char* argv[]) {
 	if (parseArgs(argc, argv)) {
@@ -148,7 +152,48 @@ int main(int argc, char* argv[]) {
 
 }
 
+// ********************** First Pass Stuff ************************************
+
 void first_pass(FILE * pInfile) {			// Is that the correct parameter?
 
+	// -------------- Call ReadAndParse() from website ------------
+	// Probably needs modifying
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
+		*lArg2, *lArg3, *lArg4;
+
+	int lRet;
+
+	FILE * lInfile;
+
+	lInfile = fopen("data.in", "r");        /* open the input file */
+
+	do
+	{
+		lRet = readAndParse(lInfile, lLine, &lLabel,
+			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
+		if (lRet != DONE && lRet != EMPTY_LINE)
+		{
+
+		}
+	} while (lRet != DONE);
+
+	//---------------------------------------------------------
+
+	// Get label from file
+
+	// isLabel();
+
+	// if(isLabel()) { add to symbol table }
+}
+
+int isLabel(char * str) {			// Is that the correct parameter?
+	
+	return 1;
 
 }
+
+// ********************** Second Pass Stuff ************************************
+
+// Execute all opcodes
+
+// File output
