@@ -138,10 +138,17 @@ int main(int argc, char* argv[]) {
 		/* Do stuff with files */
 		printf("successfully did things with files\n");
 
+		first_pass(infile);
+
 		fclose(infile);
 		fclose(outfile);
 
 	}
+
+
+}
+
+void first_pass(FILE * pInfile) {			// Is that the correct parameter?
 
 
 }
