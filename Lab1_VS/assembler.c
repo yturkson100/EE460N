@@ -1,3 +1,12 @@
+/*
+
+Name 1: S M Farhanur Rahman
+eID 1: sr42946
+Name 2: Yaw Turkson
+eID 2: yet87
+
+*/
+
 
 // ---------------- VISUAL STUDIO STUFF ---------------------
 #ifdef _MSC_VER
@@ -51,17 +60,6 @@ int parseArgs(int argc, char* argv[]) {
 	}
 }
 
-// ---------------- Opcode Check --------------------
-int isOpcode(char* text) {
-	for (int i = 0; i<28; i++) {
-		if (!strcmp(text, opcode[i])) {
-			return 1;
-		}
-	}
-
-	return -1;
-}
-
 // ----------- Parsing Assembly Language ------------------------
 int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	** pOpcode, char ** pArg1, char ** pArg2, char ** pArg3, char ** pArg4
@@ -113,8 +111,87 @@ int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	return(OK);
 }
 
-void callReadAndParse() {
-	
+// ---------------- Check Functions --------------------
+int isOpcode(char* text) {
+	for (int i = 0; i<28; i++) {
+		if (!strcmp(text, opcode[i])) {
+			return 1;
+		}
+	}
+
+	return -1;
+}
+
+int isLabel(char * str) {	
+
+	const char *invalidLabel[] = { "in", "out", "getc", "puts" };
+
+	if (strlen(str) > 20) {
+		return 0;
+	}
+
+	if (str[0] == 'x') {
+		return 0;
+	}
+
+	for (int i = 0; i<3; i++) {
+		if (strcmp(str, invalidLabel[i])) {
+			return 0;
+		}
+	}
+	for (int i = 0; i < strlen(str); i++) {
+		if (!isalpha(str[i]) || !isdigit(str)) {
+			return 0;
+		}
+	}
+
+	return 1;
+
+}
+
+// ------------------------------------------------------
+
+
+// ********************** First Parse Stuff ************************************
+
+void firstParse() {			// Is that the correct parameter?
+
+	// -------------- Call ReadAndParse() from website ------------
+	// Probably needs modifying
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
+		*lArg2, *lArg3, *lArg4;
+
+	int lRet;
+
+	/*	
+	-> Open the input file <-
+	FILE * lInfile;
+	lInfile = fopen("data.in", "r");
+	*/
+
+	do
+	{
+		lRet = readAndParse(infile, lLine, &lLabel,
+			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
+		if (lRet != DONE && lRet != EMPTY_LINE)
+		{
+			/*
+
+			if(isLabel(*lLabel)) {
+				createSymbolTable();
+			}
+
+			*/
+		}
+	} while (lRet != DONE);
+
+	//---------------------------------------------------------
+
+	// Get label from file
+
+	// isLabel();
+
+
 }
 
 // ********************** MAIN ************************************
@@ -140,10 +217,11 @@ int main(int argc, char* argv[]) {
 		}
 
 		/* Do stuff with files */
+
+		firstParse();
+
+
 		printf("successfully did things with files\n");
-
-		first_pass(infile);
-
 		fclose(infile);
 		fclose(outfile);
 
@@ -152,48 +230,9 @@ int main(int argc, char* argv[]) {
 
 }
 
-// ********************** First Pass Stuff ************************************
-
-void first_pass(FILE * pInfile) {			// Is that the correct parameter?
-
-	// -------------- Call ReadAndParse() from website ------------
-	// Probably needs modifying
-	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
-		*lArg2, *lArg3, *lArg4;
-
-	int lRet;
-
-	FILE * lInfile;
-
-	lInfile = fopen("data.in", "r");        /* open the input file */
-
-	do
-	{
-		lRet = readAndParse(lInfile, lLine, &lLabel,
-			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
-		if (lRet != DONE && lRet != EMPTY_LINE)
-		{
-
-		}
-	} while (lRet != DONE);
-
-	//---------------------------------------------------------
-
-	// Get label from file
-
-	// isLabel();
-
-	// if(isLabel()) { add to symbol table }
-}
-
-int isLabel(char * str) {			// Is that the correct parameter?
-	
-	return 1;
-
-}
 
 // ********************** Second Pass Stuff ************************************
 
-// Execute all opcodes
+// Translate all opcodes
 
 // File output
