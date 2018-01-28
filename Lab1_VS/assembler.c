@@ -13,13 +13,14 @@ FILE* infile = NULL;
 FILE* outfile = NULL;
 
 struct symbol {
-	char label[21];
+	char* label;
 	int address;
 };
 
 struct table {
 	int size;
-	struct symbol* symbolarr;
+	int capacity;
+	struct symbol** symbolarr;
 };
 
 
@@ -79,14 +80,15 @@ int isLabel(char * str) {
 
 	// Cant be certain words
 	for (int i = 0; i<4; i++) {
-		if (strcmp(str, invalidLabel[i])) {
+		if (!strcmp(str, invalidLabel[i])) {
 			return 0;
 		}
 	}
 
 	// Has to be alpha numeric
+	int len = strlen(str);
 	for (int i = 0; i < strlen(str); i++) {
-		if (!isalpha(str[i]) || !isdigit(str)) {
+		if (!isalpha(str[i]) && !isdigit(str[i])) {
 			return 0;
 		}
 	}
@@ -150,8 +152,9 @@ struct table* firstParse() {
 	int endflag = 0;
 
 	struct table* symboltable = (struct table*)malloc(sizeof(struct table));
-	(*symboltable).size = 0;
-	(*symboltable).symbolarr = (struct symbol*)malloc(7 * sizeof(struct symbol));
+	symboltable->size = 0;
+	symboltable->capacity = 7;
+	symboltable->symbolarr = (struct symbol**)malloc(7 * sizeof(struct symbol));
 
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
 		*lArg2, *lArg3, *lArg4;
@@ -178,11 +181,19 @@ struct table* firstParse() {
 				if (isLabel(lLabel) == 0) { exit(1); }
 			}
 
-			(*symboltable).symbolarr[(*symboltable).size].address = count;
-			strcpy(&(*symboltable).symbolarr[(*symboltable).size].label, lLabel);
-			printf("line parsed %i \n", count);
-			fflush(stdout);
-			//....
+			if (strcmp(lLabel, "") != 0) {
+				if ((*symboltable).size == (*symboltable).capacity) {
+					(*symboltable).capacity = ((*symboltable).capacity) * 2;
+					realloc((*symboltable).symbolarr, (*symboltable).capacity * sizeof(struct symbol));
+				}
+				(*symboltable).symbolarr[(*symboltable).size]->address = count;
+				(*symboltable).symbolarr[(*symboltable).size]->label = (char *)malloc((strlen(lLabel) + 1) * sizeof(char));
+				strcpy((*symboltable).symbolarr[(*symboltable).size]->label, lLabel);
+				(*symboltable).size++;
+				printf("line parsed %i \n", count);
+				fflush(stdout);
+				//....
+			}
 		}
 
 		if (!strcmp(".orig", lOpcode) && endflag == 0) {
