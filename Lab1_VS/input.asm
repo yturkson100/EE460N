@@ -1,5 +1,7 @@
-;This program counts from 10 to 0
-	.ORIG x3000   	
+
+	.ORIG x3000  
+	ADD R1, R1, #-1 
+	ADD R1, R1, R2	
 	LEA R0, TEN		;This instruction will be loaded into memory location x3000
 	LDW R1, R0, #0
 START	ADD R1, R1, #-1

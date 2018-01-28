@@ -27,6 +27,72 @@ enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
 
+// -------------- Convert String to Number ---------------------
+int toNum(char * pStr) {
+	char * t_ptr;
+	char * orig_pStr;
+	int t_length, k;
+	int lNum, lNeg = 0;
+	long int lNumLong;
+
+	orig_pStr = pStr;
+	if (*pStr == '#')                 /* decimal */
+	{
+		pStr++;
+		if (*pStr == '-')             /* dec is negative */
+		{
+			lNeg = 1;
+			pStr++;
+		}
+		t_ptr = pStr;
+		t_length = strlen(t_ptr);
+		for (k = 0; k < t_length; k++)
+		{
+			if (!isdigit(*t_ptr))
+			{
+				printf("Error: invalid decimal operand, %s\n", orig_pStr);
+				exit(4);
+			}
+			t_ptr++;
+		}
+		lNum = atoi(pStr);
+		if (lNeg)
+			lNum = -lNum;
+
+		return lNum;
+	}
+	else if (*pStr == 'x')        /* hex     */
+	{
+		pStr++;
+		if (*pStr == '-')         /* hex is negative */
+		{
+			lNeg = 1;
+			pStr++;
+		}
+		t_ptr = pStr;
+		t_length = strlen(t_ptr);
+		for (k = 0; k < t_length; k++)
+		{
+			if (!isxdigit(*t_ptr))
+			{
+				printf("Error: invalid hex operand, %s\n", orig_pStr);
+				exit(4);
+			}
+			t_ptr++;
+		}
+		lNumLong = strtol(pStr, NULL, 16);    /* convert hex string into integer */
+		lNum = (lNumLong > INT_MAX) ? INT_MAX : lNumLong;
+		if (lNeg)
+			lNum = -lNum;
+		return lNum;
+	}
+	else
+	{
+		printf("Error: invalid operand, %s\n", orig_pStr);
+		exit(4);  /* This has been changed from error code 3 to error code 4, see clarification 12 */
+	}
+}
+
 // -------------- Parsing Command Line Arguments ---------------------
 int parseArgs(int argc, char* argv[]) {
 
@@ -137,20 +203,20 @@ int isLabel(char * str) {
 	}
 
 	// Cant be an opcode
-	if (isOpcode(str)) {
+	if (isOpcode(str) == 1) {
 		return 0;
 	}
 
 	// Cant be certain words
 	for (int i = 0; i<4; i++) {
-		if (strcmp(str, invalidLabel[i])) {
+		if (!strcmp(str, invalidLabel[i])) {
 			return 0;
 		}
 	}
 
 	// Has to be alpha numeric
 	for (int i = 0; i < strlen(str); i++) {
-		if (!isalpha(str[i]) || !isdigit(str)) {
+		if (!isalpha(str[i]) && !isdigit(str[i])) {
 			return 0;
 		}
 	}
@@ -159,15 +225,24 @@ int isLabel(char * str) {
 
 }
 
-// ------------------------------------------------------
+void drCheck() {
+
+}
+
+void srCheck() {
+
+}
+
+void ImmeCheck() {
+
+}
 
 
 // ********************** First Parse Stuff ************************************
 
-void firstParse() {			// Is that the correct parameter?
+void firstParse() {			
 
-	// -------------- Call ReadAndParse() from website ------------
-
+	// Call ReadAndParse()  
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
 		*lArg2, *lArg3, *lArg4;
 
@@ -186,21 +261,290 @@ void firstParse() {			// Is that the correct parameter?
 		if (lRet != DONE && lRet != EMPTY_LINE)
 		{
 
-			if(isLabel(*lLabel)) {
-				printf("createSymbolTable(%s);",*lLabel);
-				//createSymbolTable();
+			//count++;
+
+			if (strcmp(lLabel, "")) {
+				if (isLabel(lLabel) == 0) { exit(1); }
 			}
 
-			
+			if (strcmp(lLabel, "") != 0) {
+				/*
+				if ((*symboltable).size == (*symboltable).capacity) {
+					(*symboltable).capacity = ((*symboltable).capacity) * 2;
+					realloc((*symboltable).symbolarr, (*symboltable).capacity * sizeof(struct symbol));
+				}
+				(*symboltable).symbolarr[(*symboltable).size]->address = count;
+				(*symboltable).symbolarr[(*symboltable).size]->label = (char *)malloc((strlen(lLabel) + 1) * sizeof(char));
+				strcpy((*symboltable).symbolarr[(*symboltable).size]->label, lLabel);
+				(*symboltable).size++;
+				printf("line parsed %i \n", count);
+				fflush(stdout);
+				*/
+			}
 		}
+		
 	} while (lRet != DONE);
 
-	//---------------------------------------------------------
+}
 
-	// Get label from file
+// ********************** Second Pass Stuff ************************************
 
-	// isLabel();
+// -------------- Translate all opcodes ------------------------
+void Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	//DR check
 
+	//SR1 check 
+
+	//SR2 check
+
+	//Imme check
+
+	fprintf(outfile, "0x1%s%s%s");
+
+}
+
+void And() {
+
+}
+
+void Halt() {
+
+}
+
+void Jmp() {
+
+}
+
+void Jsr() {
+
+}
+
+void Jsrr() {
+
+}
+
+void Ldb() {
+
+}
+
+void Ldw() {
+
+}
+
+void Lea() {
+
+}
+
+void Nop() {
+
+}
+
+void Not() {
+
+}
+
+void Ret() {
+
+}
+
+void Lshf() {
+
+}
+
+void Rshfl() {
+
+}
+
+void Rshfa() {
+
+}
+
+void Rti() {
+
+}
+
+void Stb() {
+
+}
+
+void Stw() {
+
+}
+
+void Trap() {
+
+}
+
+void Xor() {
+
+}
+
+void Brn() {
+
+}
+
+void Brzp() {
+
+}
+
+void Brz() {
+
+}
+
+void Brnp() {
+
+}
+
+void Brp() {
+
+}
+
+void Brnz() {
+
+}
+
+void Br() {
+
+}
+
+void Brnzp() {
+
+}
+
+void secondParse() {
+
+	// Call ReadAndParse()  
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
+		*lArg2, *lArg3, *lArg4;
+
+	int lRet;
+
+	do
+	{
+		lRet = readAndParse(infile, lLine, &lLabel,
+			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
+		if (lRet != DONE && lRet != EMPTY_LINE)
+		{
+
+			// -------------- Identify opcodes ------------------------
+			
+		
+			if (!strcmp(lOpcode, opcode[0])) {
+				Add(&lArg1,&lArg2,&lArg3,&lArg4);
+			}
+
+			if (!strcmp(lOpcode, opcode[1])) {
+				And();
+			}
+
+			if (!strcmp(lOpcode, opcode[2])) {
+				Halt();
+			}
+
+			if (!strcmp(lOpcode, opcode[3])) {
+				Jmp();
+			}
+
+			if (!strcmp(lOpcode, opcode[4])) {
+				Jsr();
+			}
+
+			if (!strcmp(lOpcode, opcode[5])) {
+				Jsrr();
+			}
+
+			if (!strcmp(lOpcode, opcode[6])) {
+				Ldb();
+			}
+
+			if (!strcmp(lOpcode, opcode[7])) {
+				Ldw();
+			}
+
+			if (!strcmp(lOpcode, opcode[8])) {
+				Lea();
+			}
+
+			if (!strcmp(lOpcode, opcode[9])) {
+				Nop();
+			}
+
+			if (!strcmp(lOpcode, opcode[10])) {
+				Not();
+			}
+
+			if (!strcmp(lOpcode, opcode[11])) {
+				Ret();
+			}
+
+			if (!strcmp(lOpcode, opcode[12])) {
+				Lshf();
+			}
+
+			if (!strcmp(lOpcode, opcode[13])) {
+				Rshfl();
+			}
+
+			if (!strcmp(lOpcode, opcode[14])) {
+				Rshfa();
+			}
+
+			if (!strcmp(lOpcode, opcode[15])) {
+				Rti();
+			}
+
+			if (!strcmp(lOpcode, opcode[16])) {
+				Stb();
+			}
+
+			if (!strcmp(lOpcode, opcode[17])) {
+				Stw();
+			}
+
+			if (!strcmp(lOpcode, opcode[18])) {
+				Trap();
+			}
+
+			if (!strcmp(lOpcode, opcode[19])) {
+				Xor();
+			}
+
+			if (!strcmp(lOpcode, opcode[20])) {
+				Brn();
+			}
+
+			if (!strcmp(lOpcode, opcode[21])) {
+				Brzp();
+			}
+
+			if (!strcmp(lOpcode, opcode[22])) {
+				Brz();
+			}
+
+			if (!strcmp(lOpcode, opcode[23])) {
+				Brnp();
+			}
+
+			if (!strcmp(lOpcode, opcode[24])) {
+				Brp();
+			}
+
+			if (!strcmp(lOpcode, opcode[25])) {
+				Brnz();
+			}
+
+			if (!strcmp(lOpcode, opcode[26])) {
+				Br();
+			}
+
+			if (!strcmp(lOpcode, opcode[27])) {
+				Brnzp();
+			}
+
+			// File output
+
+		}
+	} while (lRet != DONE);
 
 }
 
@@ -230,6 +574,8 @@ int main(int argc, char* argv[]) {
 
 		firstParse();
 
+		secondParse();
+
 
 		printf("successfully did things with files\n");
 		fclose(infile);
@@ -239,10 +585,3 @@ int main(int argc, char* argv[]) {
 
 
 }
-
-
-// ********************** Second Pass Stuff ************************************
-
-// Translate all opcodes
-
-// File output
