@@ -12,16 +12,17 @@ enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
 
-struct symbol {
+typedef struct Mapping {
 	char* label;
 	int address;
-};
+} Mapping;
 
-struct table {
+typedef struct Table {
 	int size;
 	int capacity;
-	struct symbol** symbolarr;
-};
+	Mapping* mapArray;
+
+} Table;
 
 
 int parseArgs(int argc, char* argv[]) {
@@ -151,10 +152,10 @@ struct table* firstParse() {
 	int startflag = 0;
 	int endflag = 0;
 
-	struct table* symboltable = (struct table*)malloc(sizeof(struct table));
+	Table* symboltable = (Table*)malloc(sizeof(Table));
 	symboltable->size = 0;
 	symboltable->capacity = 7;
-	symboltable->symbolarr = (struct symbol**)malloc(7 * sizeof(struct symbol));
+	symboltable->mapArray = (Mapping*)malloc(7 * sizeof(Mapping));
 
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
 		*lArg2, *lArg3, *lArg4;
@@ -182,14 +183,16 @@ struct table* firstParse() {
 			}
 
 			if (strcmp(lLabel, "") != 0) {
-				if ((*symboltable).size == (*symboltable).capacity) {
-					(*symboltable).capacity = ((*symboltable).capacity) * 2;
-					realloc((*symboltable).symbolarr, (*symboltable).capacity * sizeof(struct symbol));
+				if (symboltable->size == symboltable->capacity) {
+					symboltable->capacity = (symboltable->capacity) * 2;
+					realloc(symboltable->mapArray, symboltable->capacity * sizeof(Mapping));
 				}
-				(*symboltable).symbolarr[(*symboltable).size]->address = count;
-				(*symboltable).symbolarr[(*symboltable).size]->label = (char *)malloc((strlen(lLabel) + 1) * sizeof(char));
-				strcpy((*symboltable).symbolarr[(*symboltable).size]->label, lLabel);
-				(*symboltable).size++;
+
+				int i = symboltable->size;
+				symboltable->mapArray[i].address = count;
+				symboltable->mapArray[i].label = (char*)malloc((strlen(lLabel) + 1) * sizeof(char));
+				strcpy(symboltable->mapArray[i].label, lLabel);
+				symboltable->size = (symboltable->size) + 1;
 				printf("line parsed %i \n", count);
 				fflush(stdout);
 				//....
