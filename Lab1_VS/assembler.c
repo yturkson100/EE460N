@@ -27,6 +27,18 @@ enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
 
+typedef struct Mapping {
+	char* label;
+	int address;
+} Mapping;
+
+typedef struct Table {
+	int size;
+	int capacity;
+	Mapping* mapArray;
+
+} Table;
+
 // -------------- Convert String to Number ---------------------
 int toNum(char * pStr) {
 	char * t_ptr;
@@ -225,28 +237,41 @@ int isLabel(char * str) {
 
 }
 
-void drCheck() {
+int regCheck(char * lArg1) {
+
+	// Check for valid register
+	int num = lArg1[1] - '0';		// Converts number char to int
+	if (num > 7) {
+		exit(3);
+	}
+
+	// Check for letter R
+	if (lArg1[0] != 'r') {
+		exit(3);
+	}
+
+	return 1;
 
 }
 
-void srCheck() {
-
-}
-
-void ImmeCheck() {
-
-}
 
 
 // ********************** First Parse Stuff ************************************
 
-void firstParse() {			
+struct table* firstParse() {			
 
-	// Call ReadAndParse()  
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
 		*lArg2, *lArg3, *lArg4;
 
 	int lRet;
+	int count = 0;
+	int startflag = 0;
+	int endflag = 0;
+
+	Table* symboltable = (Table*)malloc(sizeof(Table));
+	symboltable->size = 0;
+	symboltable->capacity = 7;
+	symboltable->mapArray = (Mapping*)malloc(7 * sizeof(Mapping));
 
 	/*	
 	-> Open the input file <-
@@ -256,33 +281,52 @@ void firstParse() {
 
 	do
 	{
-		lRet = readAndParse(infile, lLine, &lLabel,
-			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
-		if (lRet != DONE && lRet != EMPTY_LINE)
-		{
+		lRet = readAndParse(infile, lLine, &lLabel, &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
 
-			//count++;
+		if (!strcmp(".end", lOpcode) && startflag == 1) {
+			endflag = 1;
+		}
+
+		if (lRet != DONE && lRet != EMPTY_LINE && startflag == 1 && endflag == 0) {
+			
+			count++;
 
 			if (strcmp(lLabel, "")) {
 				if (isLabel(lLabel) == 0) { exit(1); }
 			}
 
 			if (strcmp(lLabel, "") != 0) {
-				/*
-				if ((*symboltable).size == (*symboltable).capacity) {
-					(*symboltable).capacity = ((*symboltable).capacity) * 2;
-					realloc((*symboltable).symbolarr, (*symboltable).capacity * sizeof(struct symbol));
+				if (symboltable->size == symboltable->capacity) {
+					symboltable->capacity = (symboltable->capacity) * 2;
+					realloc(symboltable->mapArray, symboltable->capacity * sizeof(Mapping));
 				}
-				(*symboltable).symbolarr[(*symboltable).size]->address = count;
-				(*symboltable).symbolarr[(*symboltable).size]->label = (char *)malloc((strlen(lLabel) + 1) * sizeof(char));
-				strcpy((*symboltable).symbolarr[(*symboltable).size]->label, lLabel);
-				(*symboltable).size++;
+
+				int i = symboltable->size;
+				symboltable->mapArray[i].address = count;
+				symboltable->mapArray[i].label = (char*)malloc((strlen(lLabel) + 1) * sizeof(char));
+				strcpy(symboltable->mapArray[i].label, lLabel);
+				symboltable->size = (symboltable->size) + 1;
 				printf("line parsed %i \n", count);
+
+				// For CLion
 				fflush(stdout);
-				*/
+				
 			}
 		}
-		
+
+		if (!strcmp(".orig", lOpcode) && endflag == 0) {
+			startflag = 1;
+
+			int num;
+			num = toNum(lArg1);
+			if (num % 2 != 0) {
+				exit(3);
+			}
+			// printf("0x%.4X\n", num); WORKS
+			fprintf(outfile, "0x%.4X\n", num);
+
+		}
+
 	} while (lRet != DONE);
 
 }
@@ -290,16 +334,51 @@ void firstParse() {
 // ********************** Second Pass Stuff ************************************
 
 // -------------- Translate all opcodes ------------------------
-void Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
-	//DR check
+int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	int value = 0x1000;
 
-	//SR1 check 
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// Convert register number 
+		int num1 = lArg1[1] - '0';
+		
+		// Shift and place it in the right position
+		num1 = num1 << 9;
 
-	//SR2 check
+		// Mask it on to the instruction
+		value = value | num1;
 
-	//Imme check
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
 
-	fprintf(outfile, "0x1%s%s%s");
+
+	if (lArg3[0] == 'r') {
+		// Check for valid register
+		int num3 = lArg3[1] - '0';		// Converts number char to int
+		if (num3 > 7) {
+			exit(3);
+		}
+		else {
+			value = value | num3;
+			return value;
+		}
+	}
+
+	else if(lArg3[0] == '#'){
+		// CHECK
+		int num3 = toNum(lArg3);
+		if (num3 > 16) {
+			exit(3);
+		}
+		value = value | num3;
+		value = value | 32;
+		return value;
+	}
+	else {
+		exit(3);
+	}
+	
 
 }
 
@@ -430,94 +509,95 @@ void secondParse() {
 			
 		
 			if (!strcmp(lOpcode, opcode[0])) {
-				Add(&lArg1,&lArg2,&lArg3,&lArg4);
+				int num = Add(lArg1,lArg2,lArg3,lArg4);
+				fprintf(outfile, "0x%.4X\n", num);
 			}
 
-			if (!strcmp(lOpcode, opcode[1])) {
+			else if (!strcmp(lOpcode, opcode[1])) {
 				And();
 			}
 
-			if (!strcmp(lOpcode, opcode[2])) {
+			else if (!strcmp(lOpcode, opcode[2])) {
 				Halt();
 			}
 
-			if (!strcmp(lOpcode, opcode[3])) {
+			else if (!strcmp(lOpcode, opcode[3])) {
 				Jmp();
 			}
 
-			if (!strcmp(lOpcode, opcode[4])) {
+			else if (!strcmp(lOpcode, opcode[4])) {
 				Jsr();
 			}
 
-			if (!strcmp(lOpcode, opcode[5])) {
+			else if (!strcmp(lOpcode, opcode[5])) {
 				Jsrr();
 			}
 
-			if (!strcmp(lOpcode, opcode[6])) {
+			else if (!strcmp(lOpcode, opcode[6])) {
 				Ldb();
 			}
 
-			if (!strcmp(lOpcode, opcode[7])) {
+			else if (!strcmp(lOpcode, opcode[7])) {
 				Ldw();
 			}
 
-			if (!strcmp(lOpcode, opcode[8])) {
+			else if (!strcmp(lOpcode, opcode[8])) {
 				Lea();
 			}
 
-			if (!strcmp(lOpcode, opcode[9])) {
+			else if (!strcmp(lOpcode, opcode[9])) {
 				Nop();
 			}
 
-			if (!strcmp(lOpcode, opcode[10])) {
+			else if (!strcmp(lOpcode, opcode[10])) {
 				Not();
 			}
 
-			if (!strcmp(lOpcode, opcode[11])) {
+			else if (!strcmp(lOpcode, opcode[11])) {
 				Ret();
 			}
 
-			if (!strcmp(lOpcode, opcode[12])) {
+			else if (!strcmp(lOpcode, opcode[12])) {
 				Lshf();
 			}
 
-			if (!strcmp(lOpcode, opcode[13])) {
+			else if (!strcmp(lOpcode, opcode[13])) {
 				Rshfl();
 			}
 
-			if (!strcmp(lOpcode, opcode[14])) {
+			else if (!strcmp(lOpcode, opcode[14])) {
 				Rshfa();
 			}
 
-			if (!strcmp(lOpcode, opcode[15])) {
+			else if (!strcmp(lOpcode, opcode[15])) {
 				Rti();
 			}
 
-			if (!strcmp(lOpcode, opcode[16])) {
+			else if (!strcmp(lOpcode, opcode[16])) {
 				Stb();
 			}
 
-			if (!strcmp(lOpcode, opcode[17])) {
+			else if (!strcmp(lOpcode, opcode[17])) {
 				Stw();
 			}
 
-			if (!strcmp(lOpcode, opcode[18])) {
+			else if (!strcmp(lOpcode, opcode[18])) {
 				Trap();
 			}
 
-			if (!strcmp(lOpcode, opcode[19])) {
+			else if (!strcmp(lOpcode, opcode[19])) {
 				Xor();
 			}
 
-			if (!strcmp(lOpcode, opcode[20])) {
+			else if (!strcmp(lOpcode, opcode[20])) {
 				Brn();
 			}
 
-			if (!strcmp(lOpcode, opcode[21])) {
+			else if (!strcmp(lOpcode, opcode[21])) {
 				Brzp();
 			}
 
-			if (!strcmp(lOpcode, opcode[22])) {
+			else if (!strcmp(lOpcode, opcode[22])) {
 				Brz();
 			}
 
@@ -525,19 +605,19 @@ void secondParse() {
 				Brnp();
 			}
 
-			if (!strcmp(lOpcode, opcode[24])) {
+			else if (!strcmp(lOpcode, opcode[24])) {
 				Brp();
 			}
 
-			if (!strcmp(lOpcode, opcode[25])) {
+			else if (!strcmp(lOpcode, opcode[25])) {
 				Brnz();
 			}
 
-			if (!strcmp(lOpcode, opcode[26])) {
+			else if (!strcmp(lOpcode, opcode[26])) {
 				Br();
 			}
 
-			if (!strcmp(lOpcode, opcode[27])) {
+			else if (!strcmp(lOpcode, opcode[27])) {
 				Brnzp();
 			}
 
@@ -574,6 +654,8 @@ int main(int argc, char* argv[]) {
 
 		firstParse();
 
+		infile = fopen(argv[2], "r");
+		outfile = fopen(argv[3], "w");
 		secondParse();
 
 
