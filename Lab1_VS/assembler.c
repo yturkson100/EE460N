@@ -137,6 +137,26 @@ int offset9conversion(int input) {
 	return value;
 }
 
+int offset11conversion(int input) {
+	int negflag = 0;
+	int mask = 0x000;
+	if (input<0) {
+		negflag = 1;
+		input = -input;
+	}
+
+	int value = mask | input;
+	if (negflag == 1) {
+		value = ~value;
+		value = value + 1;
+	}
+
+	value = value & 0x07ff;
+	// printf("%04x",value);
+	// fflush(stdout);
+	return value;
+}
+
 /*------------------functions-----------------------------------------------*/
 int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	int value = 0x1000;
@@ -235,7 +255,30 @@ void Jmp() {
 
 }
 
-void Jsr() {
+int Jsr(char* lArg1, char*lArg2, int count) {
+	int ans = 0x4800;
+	int labelcheck = 0;
+	int labelindex;
+	int destination;
+	int offset;
+
+	if (strcmp(lArg1, "") == 0 || strcmp(lArg2, "") != 0) { exit(4); }            //invalid number of operands, 0 or more than 1
+	for (int i = 0; i<tableindex; i++) {
+		if (strcmp(lArg1, symbolTable[i].label) == 0) {                  //if label exists, mark the index
+			labelcheck = 1;
+			labelindex = i;
+		}
+	}
+
+	if (labelcheck != 1) { exit(1); }                                 //label is undefined
+
+	destination = symbolTable[labelindex].address;
+	offset = destination - count;
+	if (offset>1023 || offset<-1024) { exit(4); }                         // if offset cannot be represented, exit with error code 4
+	int value = offset11conversion(offset);
+
+	ans = ans | value;                                                //add the offset to instruction
+	return ans;
 
 }
 
@@ -418,7 +461,7 @@ int Xor(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	}
 }
 
-int Branch(char *lArg1, char *lArg2, char *lArg3, char *lArg4, int count, char* lOpcode) {
+int Branch(char *lArg1, char *lArg2, int count, char* lOpcode) {
 	int ans = 0x0000;
 	int labelcheck = 0;
 	int labelindex;
@@ -696,16 +739,19 @@ void secondParse() {
 				fflush(stdout);
 			}
 
-			//.fill
-			//            else if(!strcmp(lOpcode,".fill")){
-			//                //remember to print to file
-			//                if(strcmp(lArg1,"")==0 || strcmp(lArg2,"")!=0){exit(4);}   //invalid number of arguments
-			//                int ans = 0x0000;
-			//                int value = toNum(lArg1);
-			//                if(value<0 || value>65535){exit()}                          //value cannot be represented with 16 bits
-			//
-			//
-			//            }
+			// .fill
+			else if (!strcmp(lOpcode, ".fill")) {
+				//remember to print to file
+				if (strcmp(lArg1, "") == 0 || strcmp(lArg2, "") != 0) { exit(4); }   //invalid number of arguments
+				int ans = 0x0000;
+				int value = toNum(lArg1);
+				if (value<0 || value>65535) { exit(3); }                       //value cannot be represented with 16 bits/ could be 4?
+				ans = ans | value;
+				printf("0x%.4X\n", ans);
+				fflush(stdout);
+
+
+			}
 
 			else if (!strcmp(lOpcode, opcode[1])) {
 
@@ -759,7 +805,11 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[4])) {
-				Jsr();
+				int value = Jsr(lArg1, lArg2, count);
+				printf("0x%.4X\n", value);
+				fflush(stdout);
+				//remember to write to file
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[5])) {
@@ -911,7 +961,7 @@ void secondParse() {
 			//-----------------------branches-------------------------------------------------------
 			else if (memcmp(lOpcode, "br", 2) == 0) {
 				if (isOpcode(lOpcode)) {                          // if it's one of the valid branches
-					int value = Branch(lArg1, lArg2, lArg3, lArg4, count, lOpcode);
+					int value = Branch(lArg1, lArg2, count, lOpcode);
 					printf("0x%04x\n", value);
 					fflush(stdout);
 
@@ -919,12 +969,8 @@ void secondParse() {
 				}
 			}
 
-			else if (!strcmp(lOpcode, ".fill")) {
-				printf("line filler\n");
-				fflush(stdout);
-			}
 
-			// File output
+			else { exit(2); }                      //invalid opcode
 
 		}
 	} while (lRet != DONE);
