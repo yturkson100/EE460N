@@ -369,7 +369,7 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	else {			
 
-		// rangeCheck()
+		//!!!!!!! rangeCheck() !!!!!!!!!!
 
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
@@ -414,7 +414,7 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	else {		
 
-		// rangeCheck()
+		//!!!!!!! rangeCheck() !!!!!!!!!!
 
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
@@ -451,11 +451,57 @@ int Jsrr(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	}
 }
 
-void Ldb() {
+int Ldb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0x2000;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+
+		// DR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// baseR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+
+		//!!!!!!! rangeCheck() !!!!!!!!!!
+
+		// bOffset Placement
+		int num3 = toNum(lArg3);
+		num3 = num3 & 0x003F;		// Cut off the unnecessary parts
+		value = value | num3;			
+		return value;
+	}
 
 }
 
-void Ldw() {
+int Ldb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0x6000;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+
+		// DR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// baseR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+
+		//!!!!!!! rangeCheck() !!!!!!!!!!
+
+		// Offset Placement
+		int num3 = toNum(lArg3);
+		num3 = num3 & 0x003F;		// Cut off the unnecessary parts
+		value = value | num3;
+		return value;
+	}
 
 }
 
@@ -502,8 +548,7 @@ int Lshf(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num2;
 	}
 
-	// rangeCheck()
-
+	//!!!!!!! rangeCheck() !!!!!!!!!!
 
 	num = toNum(lArg3);
 	num = num & 0x000f;
@@ -529,7 +574,7 @@ int Rshfl(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num2;
 	}
 
-	// rangeCheck()
+	//!!!!!!! rangeCheck() !!!!!!!!!!
 
 	num = toNum(lArg3);
 	num = num & 0x000f;
@@ -555,7 +600,7 @@ int Rshfa(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num2;
 	}
 
-	// rangeCheck()
+	//!!!!!!! rangeCheck() !!!!!!!!!!
 
 	num = toNum(lArg3);
 	num = num & 0x000f;
@@ -565,11 +610,57 @@ int Rshfa(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 }
 
 
-void Stb() {
+int Stb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0x3000;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+
+		// SR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// baseR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+
+		//!!!!!!! rangeCheck() !!!!!!!!!!
+
+		// Offset Placement
+		int num3 = toNum(lArg3);
+		num3 = num3 & 0x003F;		// Cut off the unnecessary parts
+		value = value | num3;
+		return value;
+	}
 
 }
 
-void Stw() {
+int Stw(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0x7000;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+
+		// SR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// baseR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+
+		//!!!!!!! rangeCheck() !!!!!!!!!!
+
+		// Offset Placement
+		int num3 = toNum(lArg3);
+		num3 = num3 & 0x003F;		// Cut off the unnecessary parts
+		value = value | num3;
+		return value;
+	}
 
 }
 
@@ -607,7 +698,7 @@ void Xor(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	else {		
 
-		// rangeCheck()
+		//!!!!!!! rangeCheck() !!!!!!!!!!
 
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
@@ -750,11 +841,25 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[6])) {
-				Ldb();
+				/* Ldb(); */
+
+				int num = Ldb(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[7])) {
-				Ldw();
+				
+				/* Ldw(); */
+
+				int num = Ldw(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[8])) {
@@ -841,11 +946,24 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[16])) {
-				Stb();
+
+				/* Stb(); */
+
+				int num = stb(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[17])) {
-				Stw();
+				/* Stw(); */
+
+				int num = stw(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[18])) {
