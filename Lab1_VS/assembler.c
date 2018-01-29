@@ -242,15 +242,19 @@ int regCheck(char * lArg1) {
 	// Check for valid register
 	int num = lArg1[1] - '0';		// Converts number char to int
 	if (num > 7) {
-		exit(3);
+		exit(4);
 	}
 
 	// Check for letter R
 	if (lArg1[0] != 'r') {
-		exit(3);
+		exit(4);
 	}
 
 	return 1;
+
+}
+
+int rangeCheck(char * lArg, int bitSize) {
 
 }
 
@@ -338,15 +342,13 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	int value = 0x1000;
 
 	if (regCheck(lArg1) && regCheck(lArg2)) {
-		// Convert register number 
-		int num1 = lArg1[1] - '0';
-		
-		// Shift and place it in the right position
-		num1 = num1 << 9;
+		// DR placement
+		int num1 = lArg1[1] - '0';		// Convert register number 
+		num1 = num1 << 9;				// Shift and place it in the right position
+		value = value | num1;			// Mask it on to the instruction
 
-		// Mask it on to the instruction
-		value = value | num1;
 
+		// SR1 placement
 		int num2 = lArg2[1] - '0';
 		num2 = num2 << 6;
 		value = value | num2;
@@ -357,7 +359,7 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		// Check for valid register
 		int num3 = lArg3[1] - '0';		// Converts number char to int
 		if (num3 > 7) {
-			exit(3);
+			exit(4);
 		}
 		else {
 			value = value | num3;
@@ -365,7 +367,9 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		}
 	}
 
-	else if(lArg3[0] == '#'){			// Assuming: only # decimals number to be an immediate value
+	else {			
+
+		// rangeCheck()
 
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
@@ -376,9 +380,6 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | 32;				// Sets the 5th bit
 		return value;
 	}
-	else {
-		exit(3);
-	}
 	
 
 }
@@ -387,15 +388,12 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	int value = 0x5000;
 
 	if (regCheck(lArg1) && regCheck(lArg2)) {
-		// Convert register number 
+		// DR placement
 		int num1 = lArg1[1] - '0';
-
-		// Shift and place it in the right position
 		num1 = num1 << 9;
-
-		// Mask it on to the instruction
 		value = value | num1;
 
+		// SR1 placement
 		int num2 = lArg2[1] - '0';
 		num2 = num2 << 6;
 		value = value | num2;
@@ -406,7 +404,7 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		// Check for valid register
 		int num3 = lArg3[1] - '0';		// Converts number char to int
 		if (num3 > 7) {
-			exit(3);
+			exit(4);
 		}
 		else {
 			value = value | num3;
@@ -414,7 +412,9 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		}
 	}
 
-	else if (lArg3[0] == '#') {		// Assuming: only # decimals number to be an immediate value
+	else {		
+
+		// rangeCheck()
 
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
@@ -424,9 +424,6 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num3;
 		value = value | 32;			// Sets the 5th bit
 		return value;
-	}
-	else {
-		exit(3);
 	}
 }
 
@@ -462,29 +459,103 @@ void Nop() {
 
 }
 
-void Not() {
+int Not(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	int value = 0x903F;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// DR placement 
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// SR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
 
 }
 
-void Ret() {
+
+int Lshf(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0xd000;
+	int num;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// DR placement 
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// SR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
+
+	// rangeCheck()
+
+
+	num = toNum(lArg3);
+	num = num & 0x000f;
+	value = value | num;
+	return value;
 
 }
 
-void Lshf() {
+int Rshfl(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0xd010;
+	int num;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// DR placement 
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// SR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
+
+	// rangeCheck()
+
+	num = toNum(lArg3);
+	num = num & 0x000f;
+	value = value | num;
+	return value;
 
 }
 
-void Rshfl() {
+int Rshfa(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+
+	int value = 0xd030;
+	int num;
+
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// DR placement 
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// SR placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
+
+	// rangeCheck()
+
+	num = toNum(lArg3);
+	num = num & 0x000f;
+	value = value | num;
+	return value;
 
 }
 
-void Rshfa() {
-
-}
-
-void Rti() {
-
-}
 
 void Stb() {
 
@@ -498,8 +569,47 @@ void Trap() {
 
 }
 
-void Xor() {
+void Xor(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	int value = 0x8000;
 
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// DR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		value = value | num1;
+
+		// SR1 placement
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
+
+	//Check for SR2 or IMME
+	if (lArg3[0] == 'r') {
+		// Check for valid register
+		int num3 = lArg3[1] - '0';		// Converts number char to int
+		if (num3 > 7) {
+			exit(4);
+		}
+		else {
+			value = value | num3;
+			return value;
+		}
+	}
+
+	else {		
+
+		// rangeCheck()
+
+		int num3 = toNum(lArg3);
+		if (num3 > 16) {
+			exit(3);
+		}
+		num3 = num3 & 0x001F;		// Cut off the unnecessary parts
+		value = value | num3;
+		value = value | 32;			// Sets the 5th bit
+		return value;
+	}
 }
 
 void Brn() {
@@ -551,8 +661,12 @@ void secondParse() {
 
 			// -------------- Identify opcodes ------------------------
 			
+			//The trap vector for a TRAP instruction and the shift amount for SHF instructions must be non-negative values. 
 		
 			if (!strcmp(lOpcode, opcode[0])) {
+
+				/*	ADD()	 */
+
 				int num = Add(lArg1,lArg2,lArg3,lArg4);
 				printf("0x%.4X\n", num); 
 
@@ -561,6 +675,9 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[1])) {
+
+				/* AND() */
+
 				int num = And(lArg1, lArg2, lArg3, lArg4);
 				printf("0x%.4X\n", num);
 
@@ -569,11 +686,22 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[2])) {
-				Halt();
+
+				/*	Halt()  */
+
+				int num;
+				int value = 0xf025;	// Trapx25
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[3])) {
-				// Jmp();
+
+				/*	Jmp() */
 
 				int value = 0xB000;
 				if (regCheck(lArg1)) {
@@ -622,11 +750,21 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[10])) {
-				Not();
+				
+				/*	Not()  */
+
+				int num = Add(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[11])) {
-				// Ret();
+				
+				/*	Ret()  */
+
 				int value = 0xB1B0;
 				printf("0x%.4X\n", value);
 
@@ -637,19 +775,53 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[12])) {
-				Lshf();
+				
+				/*	Lshf()  */
+				
+
+				int num = Lshf(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[13])) {
-				Rshfl();
+				
+				/*	Rshf()  */
+
+				int num = Rshf(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+			
 			}
 
 			else if (!strcmp(lOpcode, opcode[14])) {
-				Rshfa();
+
+				/*	Rsha()  */
+
+				int num = Rsha(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[15])) {
-				Rti();
+				
+				/*	Rti()  */
+
+				int value = 0x8000;
+				printf("0x%.4X\n", value);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[16])) {
@@ -661,11 +833,38 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[18])) {
-				Trap();
+
+				/*	Trap()  */
+
+				int num;
+				int value = 0xf000;
+
+				// Can't have negative constants
+				if (lArg1[1] == '-') {
+					exit(3);
+				}
+				else {
+					num = toNum(lArg1);
+					num = num & 0x00ff;
+					value = value | num;
+
+					printf("0x%.4X\n", num);
+
+					// File Output:
+					//fprintf(outfile, "0x%.4X\n", num);
+
+				}
 			}
 
 			else if (!strcmp(lOpcode, opcode[19])) {
-				Xor();
+				
+				/*	Xor()  */
+
+				int num = xOR(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[20])) {
