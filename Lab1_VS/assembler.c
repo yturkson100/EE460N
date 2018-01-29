@@ -439,8 +439,16 @@ void Jsr() {
 
 }
 
-void Jsrr() {
+int Jsrr(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	int value = 0x4000;
 
+	if (regCheck(lArg1)) {
+		// BaseR placement
+		int num1 = lArg1[1] - '0';
+		num1 = num1 << 6;
+		value = value | num1;
+		return value;
+	}
 }
 
 void Ldb() {
@@ -730,7 +738,15 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[5])) {
-				Jsrr();
+				
+				/* JSRR() */
+
+				int num = Jsrr(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[6])) {
