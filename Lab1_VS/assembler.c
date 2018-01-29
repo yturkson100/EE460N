@@ -352,7 +352,7 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num2;
 	}
 
-
+	//Check for SR2 or IMME
 	if (lArg3[0] == 'r') {
 		// Check for valid register
 		int num3 = lArg3[1] - '0';		// Converts number char to int
@@ -365,14 +365,15 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		}
 	}
 
-	else if(lArg3[0] == '#'){
-		// CHECK
+	else if(lArg3[0] == '#'){			// Assuming: only # decimals number to be an immediate value
+
 		int num3 = toNum(lArg3);
 		if (num3 > 16) {
 			exit(3);
 		}
+		num3 = num3 & 0x001F;			// Cut off the unnecessary parts
 		value = value | num3;
-		value = value | 32;
+		value = value | 32;				// Sets the 5th bit
 		return value;
 	}
 	else {
@@ -382,8 +383,51 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 }
 
-void And() {
+int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+	int value = 0x5000;
 
+	if (regCheck(lArg1) && regCheck(lArg2)) {
+		// Convert register number 
+		int num1 = lArg1[1] - '0';
+
+		// Shift and place it in the right position
+		num1 = num1 << 9;
+
+		// Mask it on to the instruction
+		value = value | num1;
+
+		int num2 = lArg2[1] - '0';
+		num2 = num2 << 6;
+		value = value | num2;
+	}
+
+	//Check for SR2 or IMME
+	if (lArg3[0] == 'r') {
+		// Check for valid register
+		int num3 = lArg3[1] - '0';		// Converts number char to int
+		if (num3 > 7) {
+			exit(3);
+		}
+		else {
+			value = value | num3;
+			return value;
+		}
+	}
+
+	else if (lArg3[0] == '#') {		// Assuming: only # decimals number to be an immediate value
+
+		int num3 = toNum(lArg3);
+		if (num3 > 16) {
+			exit(3);
+		}
+		num3 = num3 & 0x001F;		// Cut off the unnecessary parts
+		value = value | num3;
+		value = value | 32;			// Sets the 5th bit
+		return value;
+	}
+	else {
+		exit(3);
+	}
 }
 
 void Halt() {
@@ -510,11 +554,18 @@ void secondParse() {
 		
 			if (!strcmp(lOpcode, opcode[0])) {
 				int num = Add(lArg1,lArg2,lArg3,lArg4);
-				fprintf(outfile, "0x%.4X\n", num);
+				printf("0x%.4X\n", num); 
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[1])) {
-				And();
+				int num = And(lArg1, lArg2, lArg3, lArg4);
+				printf("0x%.4X\n", num);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[2])) {
@@ -522,7 +573,28 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[3])) {
-				Jmp();
+				// Jmp();
+
+				int value = 0xB000;
+				if (regCheck(lArg1)) {
+					// Convert register number 
+					int num1 = lArg1[1] - '0';
+
+					// Shift and place it in the right position
+					num1 = num1 << 6;
+
+					// Mask it on to the instruction
+					value = value | num1;
+
+					printf("0x%.4X\n", value);
+
+					// File Output:
+					//fprintf(outfile, "0x%.4X\n", num);
+				}
+				else {
+					exit(3);
+				}
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[4])) {
@@ -554,7 +626,14 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[11])) {
-				Ret();
+				// Ret();
+				int value = 0xB1B0;
+				printf("0x%.4X\n", value);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
+
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[12])) {
