@@ -236,6 +236,10 @@ int isLabel(char * str) {
 
 int regCheck(char * lArg1) {
 
+	if (strlen(lArg1) > 2) {
+		exit(4);
+	}
+
 	// Check for valid register
 	int num = lArg1[1] - '0';		// Converts number char to int
 	if (num > 7) {
