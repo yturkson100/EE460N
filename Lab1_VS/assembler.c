@@ -279,6 +279,26 @@ int offset9conversion(int input) {
 	return value;
 }
 
+int offset11conversion(int input) {
+	int negflag = 0;
+	int mask = 0x000;
+	if (input<0) {
+		negflag = 1;
+		input = -input;
+	}
+
+	int value = mask | input;
+	if (negflag == 1) {
+		value = ~value;
+		value = value + 1;
+	}
+
+	value = value & 0x07ff;
+	// printf("%04x",value);
+	// fflush(stdout);
+	return value;
+}
+
 
 
 // ********************** First Parse Stuff ************************************
@@ -347,9 +367,14 @@ struct table* firstParse() {
 
 // ********************** Second Pass Stuff ************************************
 
-// -------------- Translate all opcodes ------------------------
+// -------------- Opcodes Function ------------------------
 int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	int value = 0x1000;
+
+	//invalid number of operands 0 or more than 1
+	if ((strcmp(lArg1, "") == 0) || (strcmp(lArg2, "") == 0) || (strcmp(lArg3, "") == 0) || (strcmp(lArg2, "") != 0)) { 
+		exit(4); 
+	}
 
 	if (regCheck(lArg1) && regCheck(lArg2)) {
 		// DR placement
@@ -364,27 +389,25 @@ int Add(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		value = value | num2;
 	}
 
+	else { exit(4); }
+
 	//Check for SR2 or IMME
 	if (lArg3[0] == 'r') {
+
 		// Check for valid register
+		if (regCheck(lArg3) != 1) {exit(4);}
+
 		int num3 = lArg3[1] - '0';		// Converts number char to int
-		if (num3 > 7) {
-			exit(4);
-		}
-		else {
-			value = value | num3;
-			return value;
-		}
+		num3 = 0x0003 & num3;
+		value = value | num3;
+		return value;
+		
 	}
 
 	else {			
 
-		//!!!!!!! rangeCheck() !!!!!!!!!!
-
 		int num3 = toNum(lArg3);
-		if (num3 > 16) {
-			exit(3);
-		}
+		if (num3 > 15 || num3 < -16) { exit(3); }
 		num3 = num3 & 0x001F;			// Cut off the unnecessary parts
 		value = value | num3;
 		value = value | 32;				// Sets the 5th bit
@@ -437,15 +460,31 @@ int And(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	}
 }
 
-void Halt() {
 
-}
+int Jsr(char* lArg1, char*lArg2, int count) {
+	int ans = 0x4800;
+	int labelcheck = 0;
+	int labelindex;
+	int destination;
+	int offset;
 
-void Jmp() {
+	if (strcmp(lArg1, "") == 0 || strcmp(lArg2, "") != 0) { exit(4); }            //invalid number of operands, 0 or more than 1
+	for (int i = 0; i<tableindex; i++) {
+		if (strcmp(lArg1, symbolTable[i].label) == 0) {                  //if label exists, mark the index
+			labelcheck = 1;
+			labelindex = i;
+		}
+	}
 
-}
+	if (labelcheck != 1) { exit(1); }                                 //label is undefined
 
-int Jsr() {
+	destination = symbolTable[labelindex].address;
+	offset = destination - count;
+	if (offset>1023 || offset<-1024) { exit(4); }                         // if offset cannot be represented, exit with error code 4
+	int value = offset11conversion(offset);
+
+	ans = ans | value;                                                //add the offset to instruction
+	return ans;
 
 }
 
@@ -552,12 +591,6 @@ int Lea(char *lArg1, char *lArg2, char *lArg3, char *lArg4, int count) {
 		return ans;
 	}
 	
-	
-	
-}
-
-void Nop() {
-
 }
 
 int Not(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
@@ -573,6 +606,11 @@ int Not(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 		int num2 = lArg2[1] - '0';
 		num2 = num2 << 6;
 		value = value | num2;
+
+		return value;
+	}
+	else {
+		exit(4);
 	}
 
 }
@@ -711,9 +749,6 @@ int Stw(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 }
 
-void Trap() {
-
-}
 
 void Xor(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	int value = 0x8000;
@@ -805,6 +840,9 @@ int Branch(char *lArg1, char *lArg2, char *lArg3, char *lArg4, int count, char* 
 	}
 	return ans;
 }
+
+//-----------------------end of opcode functions----------------------------------------
+
 
 void secondParse() {
 	int count = 0;
