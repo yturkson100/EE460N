@@ -484,7 +484,7 @@ int Ldb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 }
 
-int Ldb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
+int Ldw(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	int value = 0x6000;
 
