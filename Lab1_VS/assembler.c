@@ -3,26 +3,24 @@
 #include <string.h> /* String operations library */
 #include <ctype.h> /* Library for useful character operations */
 #include <limits.h> /* Library for definitions of common variable type characteristics */
-#include <stdbool.h>
 
 const char *opcode[] = { "add","and","halt","jmp","jsr","jsrr","ldb","ldw","lea","nop","not","ret","lshf", "rshfl",
 "rshfa","rti","stb","stw","trap","xor","brn","brzp","brz","brnp","brp","brnz","br","brnzp" };
+
 #define MAX_LINE_LENGTH 255
 enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
 
-typedef struct Mapping {
-	char* label;
+#define MAX_LABEL_LEN 20
+#define MAX_SYMBOLS 255
+typedef struct {
 	int address;
-} Mapping;
+	char label[MAX_LABEL_LEN + 1];
+} TableEntry;
+TableEntry symbolTable[MAX_SYMBOLS];
+int tableindex = 0;
 
-typedef struct Table {
-	int size;
-	int capacity;
-	Mapping* mapArray;
-
-} Table;
 
 
 int parseArgs(int argc, char* argv[]) {
@@ -62,7 +60,7 @@ int isOpcode(char* text) {
 
 int isLabel(char * str) {
 
-	const char *invalidLabel[] = { "in", "out", "getc", "puts" };
+	const char *invalidLabel[] = { "in", "out", "getc", "puts", "r0", "r1", "r2", "r3","r4","r5","r6","r7" };
 
 	// Length Check
 	if (strlen(str) > 20) {
@@ -80,7 +78,7 @@ int isLabel(char * str) {
 	}
 
 	// Cant be certain words
-	for (int i = 0; i<4; i++) {
+	for (int i = 0; i<12; i++) {
 		if (!strcmp(str, invalidLabel[i])) {
 			return 0;
 		}
@@ -147,69 +145,135 @@ int readAndParse(FILE * pInfile, char * pLine, char ** pLabel, char
 	return(OK);
 }
 
-struct table* firstParse() {
+int toNum(char * pStr) {
+	char * t_ptr;
+	char * orig_pStr;
+	int t_length, k;
+	int lNum, lNeg = 0;
+	long int lNumLong;
+
+	orig_pStr = pStr;
+	if (*pStr == '#')                                /* decimal */
+	{
+		pStr++;
+		if (*pStr == '-')                                /* dec is negative */
+		{
+			lNeg = 1;
+			pStr++;
+		}
+		t_ptr = pStr;
+		t_length = strlen(t_ptr);
+		for (k = 0; k < t_length; k++)
+		{
+			if (!isdigit(*t_ptr))
+			{
+				printf("Error: invalid decimal operand, %s\n", orig_pStr);
+				exit(4);
+			}
+			t_ptr++;
+		}
+		lNum = atoi(pStr);
+		if (lNeg)
+			lNum = -lNum;
+
+		return lNum;
+	}
+	else if (*pStr == 'x')        /* hex     */
+	{
+		pStr++;
+		if (*pStr == '-')                                /* hex is negative */
+		{
+			lNeg = 1;
+			pStr++;
+		}
+		t_ptr = pStr;
+		t_length = strlen(t_ptr);
+		for (k = 0; k < t_length; k++)
+		{
+			if (!isxdigit(*t_ptr))
+			{
+				printf("Error: invalid hex operand, %s\n", orig_pStr);
+				exit(4);
+			}
+			t_ptr++;
+		}
+		lNumLong = strtol(pStr, NULL, 16);    /* convert hex string into integer */
+		lNum = (lNumLong > INT_MAX) ? INT_MAX : lNumLong;
+		if (lNeg)
+			lNum = -lNum;
+		return lNum;
+	}
+	else
+	{
+		printf("Error: invalid operand, %s\n", orig_pStr);
+		exit(4);  /* This has been changed from error code 3 to error code 4, see clarification 12 */
+	}
+}
+
+int firstParse() {
 	int count = 0;
-	int startflag = 0;
 	int endflag = 0;
+	int startflag = 0;
 
-	Table* symboltable = (Table*)malloc(sizeof(Table));
-	symboltable->size = 0;
-	symboltable->capacity = 7;
-	symboltable->mapArray = (Mapping*)malloc(7 * sizeof(Mapping));
-
-	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
-		*lArg2, *lArg3, *lArg4;
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
 
 	int lRet;
-
-	//FILE * lInfile;
-
-	//lInfile = fopen( "data.in", "r" );        /* open the input file */
 
 	do
 	{
 		lRet = readAndParse(infile, lLine, &lLabel, &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
 
-		if (!strcmp(".end", lOpcode) && startflag == 1) {
+		/*checks the very first opcode to be a valid .orig, and set startflag to 1 if it is*/
+		if (count == 0 && strcmp(lOpcode, "") != 0) {
+
+			if (strcmp(".orig", lOpcode) != 0) { exit(4); }   //if first opcode isn't .orig, throw error 4
+
+			int value = toNum(lArg1);
+			if (value<0 || value>65535) { exit(3); }      //.orig address isn't in 16 bit address space, throw error 3
+			if (value % 2 != 0) { exit(3); }                 //.orig address is odd/not word aligned, throw error 3
+
+			startflag = 1;
+		}
+
+		/* check for the end of the code and set endflag*/
+		if (count != 0 && strcmp(lOpcode, ".end") == 0) {
 			endflag = 1;
 		}
 
 		if (lRet != DONE && lRet != EMPTY_LINE && startflag == 1 && endflag == 0) {
-			//...
+
 			count++;
 
-			if (strcmp(lLabel, "")) {
-				if (isLabel(lLabel) == 0) { exit(1); }
-			}
-
-			if (strcmp(lLabel, "") != 0) {
-				if (symboltable->size == symboltable->capacity) {
-					symboltable->capacity = (symboltable->capacity) * 2;
-					realloc(symboltable->mapArray, symboltable->capacity * sizeof(Mapping));
+			if (strcmp(lLabel, "") != 0) {               //if it has a label and is valid, check if it already exists, if not put it in the table
+				int valid = isLabel(lLabel);
+				if (valid == 1) {
+					for (int i = 0; i<tableindex; i++) {
+						if (strcmp(symbolTable[i].label, lLabel) == 0) {
+							exit(4);                                    //error code 4 if label already exists in table
+						}
+					}
+					/* insert label into table*/
+					symbolTable[tableindex].address = count - 1;
+					strcpy(symbolTable[tableindex].label, lLabel);
+					tableindex++;
 				}
-
-				int i = symboltable->size;
-				symboltable->mapArray[i].address = count;
-				symboltable->mapArray[i].label = (char*)malloc((strlen(lLabel) + 1) * sizeof(char));
-				strcpy(symboltable->mapArray[i].label, lLabel);
-				symboltable->size = (symboltable->size) + 1;
-				printf("line parsed %i \n", count);
-				fflush(stdout);
-				//....
+				else { exit(4); }                                          //error code 4 if the label isn't valid
 			}
-		}
 
-		if (!strcmp(".orig", lOpcode) && endflag == 0) {
-			startflag = 1;
-		}
+			//will delete these next 2 lines
+			printf("line parsed %i \n", count - 1);
+			fflush(stdout);
 
+
+		}
 	} while (lRet != DONE);
+
+	return endflag;
 }
 
 int main(int argc, char* argv[]) {
 	if (parseArgs(argc, argv)) {
 		/* open the source file */
-		//fflush(stdout);
 		infile = fopen(argv[1], "r");
 		outfile = fopen(argv[2], "w");
 
@@ -224,13 +288,14 @@ int main(int argc, char* argv[]) {
 
 		/* Do stuff with files */
 		//-----get the symbol table----------
-		struct table* symbolTable = firstParse();
+		int end = firstParse();
+		if (end != 1) { exit(4); }                    //throw an error if there is no .end in code
 		printf("successfully did things with files\n");
+		fflush(stdout);
 		//---------------------------------------------------------------------------------------
 		fclose(infile);
 		fclose(outfile);
 
 	}
-
 
 }
