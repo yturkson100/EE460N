@@ -27,17 +27,14 @@ enum { DONE, OK, EMPTY_LINE };
 FILE* infile = NULL;
 FILE* outfile = NULL;
 
-typedef struct Mapping {
-	char* label;
+#define MAX_LABEL_LEN 20
+#define MAX_SYMBOLS 255
+typedef struct {
 	int address;
-} Mapping;
-
-typedef struct Table {
-	int size;
-	int capacity;
-	Mapping* mapArray;
-
-} Table;
+	char label[MAX_LABEL_LEN + 1];
+} TableEntry;
+TableEntry symbolTable[MAX_SYMBOLS];
+int tableindex = 0;
 
 // -------------- Convert String to Number ---------------------
 int toNum(char * pStr) {
@@ -258,81 +255,90 @@ int rangeCheck(char * lArg, int bitSize) {
 
 }
 
+int offset9conversion(int input) {
+	int negflag = 0;
+	int mask = 0x000;
+	if (input<0) {
+		negflag = 1;
+		input = -input;
+	}
+
+	int value = mask | input;
+	if (negflag == 1) {
+		value = ~value;
+		value = value + 1;
+	}
+
+	value = value & 0x01ff;
+	// printf("%04x",value);
+	// fflush(stdout);
+	return value;
+}
+
 
 
 // ********************** First Parse Stuff ************************************
 
 struct table* firstParse() {			
 
-	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
-		*lArg2, *lArg3, *lArg4;
+	int count = 0;
+	int endflag = 0;
+	int startflag = 0;
+
+	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
 
 	int lRet;
-	int count = 0;
-	int startflag = 0;
-	int endflag = 0;
-
-	Table* symboltable = (Table*)malloc(sizeof(Table));
-	symboltable->size = 0;
-	symboltable->capacity = 7;
-	symboltable->mapArray = (Mapping*)malloc(7 * sizeof(Mapping));
-
-	/*	
-	-> Open the input file <-
-	FILE * lInfile;
-	lInfile = fopen("data.in", "r");
-	*/
 
 	do
 	{
 		lRet = readAndParse(infile, lLine, &lLabel, &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
 
-		if (!strcmp(".end", lOpcode) && startflag == 1) {
+		/*checks the very first opcode to be a valid .orig, and set startflag to 1 if it is*/
+		if (count == 0 && strcmp(lOpcode, "") != 0) {
+
+			if (strcmp(".orig", lOpcode) != 0) { exit(4); }   //if first opcode isn't .orig, throw error 4
+
+			int value = toNum(lArg1);
+			if (value<0 || value>65535) { exit(3); }      //.orig address isn't in 16 bit address space, throw error 3
+			if (value % 2 != 0) { exit(3); }                 //.orig address is odd/not word aligned, throw error 3
+
+			startflag = 1;
+		}
+
+		/* check for the end of the code and set endflag*/
+		if (count != 0 && strcmp(lOpcode, ".end") == 0) {
 			endflag = 1;
 		}
 
 		if (lRet != DONE && lRet != EMPTY_LINE && startflag == 1 && endflag == 0) {
-			
+
 			count++;
 
-			if (strcmp(lLabel, "")) {
-				if (isLabel(lLabel) == 0) { exit(1); }
-			}
-
-			if (strcmp(lLabel, "") != 0) {
-				if (symboltable->size == symboltable->capacity) {
-					symboltable->capacity = (symboltable->capacity) * 2;
-					realloc(symboltable->mapArray, symboltable->capacity * sizeof(Mapping));
+			if (strcmp(lLabel, "") != 0) {               //if it has a label and is valid, check if it already exists, if not put it in the table
+				int valid = isLabel(lLabel);
+				if (valid == 1) {
+					for (int i = 0; i<tableindex; i++) {
+						if (strcmp(symbolTable[i].label, lLabel) == 0) {
+							exit(4);                                    //error code 4 if label already exists in table
+						}
+					}
+					/* insert label into table*/
+					symbolTable[tableindex].address = count - 1;
+					strcpy(symbolTable[tableindex].label, lLabel);
+					tableindex++;
 				}
-
-				int i = symboltable->size;
-				symboltable->mapArray[i].address = count;
-				symboltable->mapArray[i].label = (char*)malloc((strlen(lLabel) + 1) * sizeof(char));
-				strcpy(symboltable->mapArray[i].label, lLabel);
-				symboltable->size = (symboltable->size) + 1;
-				printf("line parsed %i \n", count);
-
-				// For CLion
-				fflush(stdout);
-				
+				else { exit(4); }                                          //error code 4 if the label isn't valid
 			}
-		}
 
-		if (!strcmp(".orig", lOpcode) && endflag == 0) {
-			startflag = 1;
+			//will delete these next 2 lines
+			printf("line parsed %i \n", count - 1);
+			fflush(stdout);
 
-			int num;
-			num = toNum(lArg1);
-			if (num % 2 != 0) {
-				exit(3);
-			}
-			// printf("0x%.4X\n", num); WORKS
-			fprintf(outfile, "0x%.4X\n", num);
 
 		}
-
 	} while (lRet != DONE);
 
+	return endflag;
 }
 
 // ********************** Second Pass Stuff ************************************
@@ -435,7 +441,7 @@ void Jmp() {
 
 }
 
-void Jsr() {
+int Jsr() {
 
 }
 
@@ -505,8 +511,45 @@ int Ldb(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 }
 
-void Lea() {
+int Lea(char *lArg1, char *lArg2, char *lArg3, char *lArg4, int count) {
+	
+	int ans = 0xe000;
+	int labelcheck = 0;
+	int labelindex;
+	int destination;
+	int offset;
+	int num1;
 
+	//invalid number of operands 0 or more than 1
+	if ((strcmp(lArg1, "") == 0) || (strcmp(lArg2, "") == 0) || (strcmp(lArg2, "") != 0)) { exit(4); }     
+
+	for (int i = 0; i<tableindex; i++) {
+		if (strcmp(lArg1, symbolTable[i].label) == 0) {                  //if label exists, mark the index
+			labelcheck = 1;
+			labelindex = i;
+		}
+	}
+
+	if (labelcheck != 1) { exit(1); }                                     //if label is undefined, exit with error code 1
+
+	destination = symbolTable[labelindex].address;
+	offset = destination - count;
+	if (offset>255 || offset<-256) { exit(4); }                         // if offset cannot be represented, exit with error code 4
+	int value = offset9conversion(offset);
+
+	ans = ans | value;                                                //add the offset to instruction
+	
+	// DR placement
+	if (regCheck(lArg1)) {
+		num1 = lArg1[1] - '0';
+		num1 = num1 << 9;
+		ans = ans | num1;
+
+		return ans;
+	}
+	
+	
+	
 }
 
 void Nop() {
@@ -711,39 +754,58 @@ void Xor(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 	}
 }
 
-void Brn() {
+int Branch(char *lArg1, char *lArg2, char *lArg3, char *lArg4, int count, char* lOpcode) {
+	int ans = 0x0000;
+	int labelcheck = 0;
+	int labelindex;
+	int destination;
+	int offset;
+	if ((strcmp(lArg1, "") == 0) || (strcmp(lArg2, "") != 0)) { exit(4); }     //invalid number of operands 0 or more than 1
 
-}
+	for (int i = 0; i<tableindex; i++) {
+		if (strcmp(lArg1, symbolTable[i].label) == 0) {                  //if label exists, mark the index
+			labelcheck = 1;
+			labelindex = i;
+		}
+	}
 
-void Brzp() {
+	if (labelcheck != 1) { exit(1); }                                     //if label is undefined, exit with error code 1
 
-}
+	destination = symbolTable[labelindex].address;
+	offset = destination - count;
+	if (offset>255 || offset<-256) { exit(4); }                         // if offset cannot be represented, exit with error code 4
+	int value = offset9conversion(offset);
 
-void Brz() {
+	ans = ans | value;                                                //add the offset to instruction
 
-}
-
-void Brnp() {
-
-}
-
-void Brp() {
-
-}
-
-void Brnz() {
-
-}
-
-void Br() {
-
-}
-
-void Brnzp() {
-
+	if (strcmp(lOpcode, "br") == 0 || strcmp(lOpcode, "brnzp") == 0) {         // BRNZP and br
+		ans = ans | 0x0e00;
+	}
+	else if (strcmp(lOpcode, "brn") == 0) {
+		ans = ans | 0x0800;
+	}
+	else if (strcmp(lOpcode, "brz") == 0) {
+		ans = ans | 0x0400;
+	}
+	else if (strcmp(lOpcode, "brp") == 0) {
+		ans = ans | 0x0200;
+	}
+	else if (strcmp(lOpcode, "brzp") == 0) {
+		ans = ans | 0x0600;
+	}
+	else if (strcmp(lOpcode, "brnp") == 0) {
+		ans = ans | 0x0a00;
+	}
+	else if (strcmp(lOpcode, "brnz") == 0) {
+		ans = ans | 0x0c00;
+	}
+	return ans;
 }
 
 void secondParse() {
+	int count = 0;
+	int endflag = 0;
+	int startflag = 0;
 
 	// Call ReadAndParse()  
 	char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1,
@@ -755,8 +817,22 @@ void secondParse() {
 	{
 		lRet = readAndParse(infile, lLine, &lLabel,
 			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
+
+		/*set the start flag when opcode is .orig*/                                                 //made change
+		if (count == 0 && strcmp(lOpcode, ".orig") == 0) {
+			startflag = 1;
+		}
+
+		/* check for the end of the code and set endflag*/                                          //made change
+		if (count != 0 && strcmp(lOpcode, ".end") == 0) {
+			endflag = 1;
+		}
+
+
 		if (lRet != DONE && lRet != EMPTY_LINE)
 		{
+
+			count++;
 
 			// -------------- Identify opcodes ------------------------
 			
@@ -825,7 +901,16 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[4])) {
-				Jsr();
+				
+				/*	Jsr();	*/
+
+				int value = Jsr(lArg1, lArg2, lArg3, lArg4, count, lOpcode);
+				printf("0x%04x\n", value);
+
+				//fflush(stdout);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[5])) {
@@ -863,11 +948,23 @@ void secondParse() {
 			}
 
 			else if (!strcmp(lOpcode, opcode[8])) {
-				Lea();
+				
+				/* Lea() */
+				int value = Lea(lArg1, lArg2, lArg3, lArg4, count);
+				printf("0x%04x\n", value);
+
+				//fflush(stdout);
+
+				// File Output:
+				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
 			else if (!strcmp(lOpcode, opcode[9])) {
-				Nop();
+
+				/*	Nop()  */
+				int value = 0x0000;
+				printf("0x%.4X\n", value);
+
 			}
 
 			else if (!strcmp(lOpcode, opcode[10])) {
@@ -910,9 +1007,9 @@ void secondParse() {
 
 			else if (!strcmp(lOpcode, opcode[13])) {
 				
-				/*	Rshf()  */
+				/*	Rshfl()  */
 
-				int num = Rshf(lArg1, lArg2, lArg3, lArg4);
+				int num = Rshfl(lArg1, lArg2, lArg3, lArg4);
 				printf("0x%.4X\n", num);
 
 				// File Output:
@@ -922,9 +1019,9 @@ void secondParse() {
 
 			else if (!strcmp(lOpcode, opcode[14])) {
 
-				/*	Rsha()  */
+				/*	Rshfa()  */
 
-				int num = Rsha(lArg1, lArg2, lArg3, lArg4);
+				int num = Rshfa(lArg1, lArg2, lArg3, lArg4);
 				printf("0x%.4X\n", num);
 
 				// File Output:
@@ -1001,36 +1098,28 @@ void secondParse() {
 				//fprintf(outfile, "0x%.4X\n", num);
 			}
 
-			else if (!strcmp(lOpcode, opcode[20])) {
-				Brn();
+
+			else if (memcmp(lOpcode, "br", 2) == 0) {
+
+				/* branches	*/
+
+				if (isOpcode(lOpcode)) {                          // if it's one of the valid branches
+					int value = Branch(lArg1, lArg2, lArg3, lArg4, count, lOpcode);
+					printf("0x%04x\n", value);
+					
+					//fflush(stdout);
+
+					// File Output:
+					//fprintf(outfile, "0x%.4X\n", num);
+				}
 			}
 
-			else if (!strcmp(lOpcode, opcode[21])) {
-				Brzp();
+			else if (!strcmp(lOpcode, ".fill")) {
+				printf("line filler\n");
+				// fflush(stdout);
 			}
-
-			else if (!strcmp(lOpcode, opcode[22])) {
-				Brz();
-			}
-
-			if (!strcmp(lOpcode, opcode[23])) {
-				Brnp();
-			}
-
-			else if (!strcmp(lOpcode, opcode[24])) {
-				Brp();
-			}
-
-			else if (!strcmp(lOpcode, opcode[25])) {
-				Brnz();
-			}
-
-			else if (!strcmp(lOpcode, opcode[26])) {
-				Br();
-			}
-
-			else if (!strcmp(lOpcode, opcode[27])) {
-				Brnzp();
+			else {
+				exit(2);
 			}
 
 			// File output
