@@ -23,5 +23,8 @@
     <None Include="input.asm">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shuffle.asm">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
