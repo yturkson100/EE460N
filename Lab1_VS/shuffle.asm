@@ -1,22 +1,38 @@
-		.ORIG x3000
+.ORIG x3000
+
+AND R0, R0, #0
+ADD R0, R0, #4
+LSHF R0, R0, #12
 
 
-Pseudo:
-R0 <- content of x4000
+LDB R6, R0, #4
 
-R1 <- content of x4001
+AND R1, R6, x3
 
-R2 <- content of x4002
+AND R2, R6, xC
+RSHFL R2, R2, #2
 
-R3 <- content of x4003
+AND R3, R6, x30
+RSHFL R3, R3, #4
 
-R4 <- content of x4004 (control)
+AND R4, R6, xC0
+RSHFL R4, R4, #6
 
-Check bits [1:0]
-if (0:0){ 
-	nop
-}
-if (0:1){
-	R5 <- R0
-	R0 <R1
-}
+ADD R6, R0, R1
+LDB R7, R6, #0
+STB R7, R0, #5
+
+ADD R6, R0, R2
+LDB R7, R6, #0
+STB R7, R0, #6
+
+ADD R6, R0, R3
+LDB R7, R6, #0
+STB R7, R0, #7
+
+ADD R6, R0, R4
+LDB R7, R6, #0
+STB R7, R0, #8
+
+HALT
+.END

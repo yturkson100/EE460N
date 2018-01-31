@@ -678,7 +678,7 @@ int Lshf(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	/* Amount placement */
 	num = toNum(lArg3);
-	if (num < 0 || num > 16) {
+	if (num < 0 || num > 15) {
 		exit(3);
 	}
 	num = num & 0x000f;
@@ -713,7 +713,7 @@ int Rshfl(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	/* Amount placement */
 	num = toNum(lArg3);
-	if (num < 0 || num > 16) {
+	if (num < 0 || num > 15) {
 		exit(3);
 	}
 	num = num & 0x000f;
@@ -748,7 +748,7 @@ int Rshfa(char *lArg1, char *lArg2, char *lArg3, char *lArg4) {
 
 	/* Amount placement */
 	num = toNum(lArg3);
-	if (num < 0 || num > 16) {
+	if (num < 0 || num > 15) {
 		exit(3);
 	}
 	num = num & 0x000f;
@@ -931,7 +931,10 @@ void secondParse() {
 			&lOpcode, &lArg1, &lArg2, &lArg3, &lArg4);
 
 
-		/* check for the end of the code and set endflag*/                                          //made change
+		if (count == 0 && strcmp(lOpcode, ".orig") == 0) {
+			startflag = 1;
+		}
+
 		if (count != 0 && strcmp(lOpcode, ".end") == 0) {
 			endflag = 1;
 		}
@@ -1231,10 +1234,6 @@ void secondParse() {
 
 		}
 
-		/*set the start flag when opcode is .orig*/                                                 //made change
-		if (count == 0 && strcmp(lOpcode, ".orig") == 0) {
-			startflag = 1;
-		}
 
 	} while (lRet != DONE);
 
