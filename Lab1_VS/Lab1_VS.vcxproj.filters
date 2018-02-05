@@ -18,12 +18,15 @@
     <ClCompile Include="assembler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lc3bsim2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="input.asm">
+    <None Include="shuffle.asm">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="shuffle.asm">
+    <None Include="source.asm">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
