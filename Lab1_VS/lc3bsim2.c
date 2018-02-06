@@ -515,6 +515,7 @@ void process_instruction() {
 		}
 
 		setcc(sum);
+		CURRENT_LATCHES.PC = CURRENT_LATCHES.PC + 2;
 	}
 
 	else if (opcode == 0x5000) {
@@ -540,6 +541,7 @@ void process_instruction() {
 			CURRENT_LATCHES.REGS[dr] = andOp;
 		}
 		setcc(andOp);
+		CURRENT_LATCHES.PC = CURRENT_LATCHES.PC + 2;
 
 	}
 
