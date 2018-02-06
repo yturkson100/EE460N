@@ -418,14 +418,6 @@ void setcc(int num) {
 	}
 }
 
-int convert(int inSize, int value, int sign) {
-	/* signed : -1, unsigned : +1 */
-	
-
-	if (sign < 0) {
-
-	}
-}
 
 int sExt(int inSize, int value) {
 	/* 
