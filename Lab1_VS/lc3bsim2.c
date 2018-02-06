@@ -404,7 +404,23 @@ Begin your code here 	  			       */
 
 /***************************************************************/
 
+void setcc(int num) {
+	if (num == 0) {
+		CURRENT_LATCHES.Z = 1;
+	}
 
+	else if (num > 0) {
+		CURRENT_LATCHES.P = 1;
+	}
+
+	else if (num < 0) {
+		CURRENT_LATCHES.N = 1;
+	}
+}
+
+int convert(int inSize, int value, int sign) {
+
+}
 
 void process_instruction() {
 	/*  function: process_instruction
@@ -415,9 +431,9 @@ void process_instruction() {
 	*       -Execute
 	*       -Update NEXT_LATCHES
 	*/
-
-	int lowBits = MEMORY[CURRENT_LATCHES.PC][0];
-	int highBits = MEMORY[CURRENT_LATCHES.PC][1];
+	int addr = CURRENT_LATCHES.PC;
+	int lowBits = MEMORY[addr >> 1][0];
+	int highBits = MEMORY[addr >> 1][1];
 
 	int instr = 0x0000;
 	int opcode;
@@ -434,60 +450,79 @@ void process_instruction() {
 
 	if (opcode == 0x1000) {
 		/*	ADD	*/
+		int sum;
+		int dr = instr & 0x0e000;
+		dr = dr >> 9;
 
+		int sr1 = instr & 0x01c0;
+		sr1 = sr1 >> 6;
 
+		if ((instr & 0x0020) == 0) {
+			int sr2 = instr & 0x0007;
+			sum = CURRENT_LATCHES.REGS[sr1] + CURRENT_LATCHES.REGS[sr2];
+			CURRENT_LATCHES.REGS[dr] = sum;
+		}
+		
+		else {
+			int imme = instr & 0x001f;
+			imme = convert(5, imme, -1);
+			sum = CURRENT_LATCHES.REGS[sr1] + imme;
+			sum = Low16bits(sum);
+			CURRENT_LATCHES.REGS[dr] = sum;
+		}
 
+		setcc(dr);
 	}
 
-	if (opcode == 0x5000) {
+	else if (opcode == 0x5000) {
 		/*	AND	*/
 	}
 
-	if (opcode == 0xC000) {
+	else if (opcode == 0xC000) {
 		/*	JMP	*/
 	}
 
-	if (opcode == 0X4000) {
+	else if (opcode == 0X4000) {
 		/*	JSR	*/
 	}
 
-	if (opcode == 0x2000) {
+	else if (opcode == 0x2000) {
 		/*	LDB	*/
 	}
 
-	if (opcode == 0x6000) {
+	else if (opcode == 0x6000) {
 		/*	LDW	*/
 	}
 
-	if (opcode == 0xE000) {
+	else if (opcode == 0xE000) {
 		/*	LEA	*/
 	}
 
-	if (opcode == 0x9000) {
+	else if (opcode == 0x9000) {
 		/*	NOT	& XOR */
 	}
 
-	if (opcode == 0xC000) {
+	else if (opcode == 0xC000) {
 		/*	RET	*/
 	}
 
-	if (opcode == 0x8000) {
+	else if (opcode == 0x8000) {
 		/*	RTI	*/
 	}
 
-	if (opcode == 0xD000) {
+	else if (opcode == 0xD000) {
 		/*	SHF	*/
 	}
 
-	if (opcode == 0x3000) {
+	else if (opcode == 0x3000) {
 		/*	STB	*/
 	}
 
-	if (opcode == 0x7000) {
+	else if (opcode == 0x7000) {
 		/*	STW	*/
 	}
 
-	if (opcode == 0xF000) {
+	else if (opcode == 0xF000) {
 		/*	TRAP	*/
 	}
 
