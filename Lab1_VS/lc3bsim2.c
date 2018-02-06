@@ -419,7 +419,58 @@ void setcc(int num) {
 }
 
 int convert(int inSize, int value, int sign) {
+	/* signed : -1, unsigned : +1 */
+	
 
+	if (sign < 0) {
+
+	}
+}
+
+int sExt(int inSize, int value) {
+	/* 
+	Dheck if the most sig bit it 1 or 0
+	If 1, extend 32bit with 1 
+	*/
+	int num;
+
+	if (inSize == 5) {
+		num = value & 0x10;
+		if (num > 0) {
+			num = value | 0xfffffff0;
+			return num;
+		}
+		else { return value; }
+	}
+
+	if (inSize == 6) {
+		num = value & 0x20;
+		if (num > 0) {
+			num = value | 0xffffffe0;
+			return num;
+		}
+		else { return value; }
+	}
+
+	if (inSize == 9) {
+		num = value & 0x100;
+		if (num > 0) {
+			num = value | 0xffffff00;
+			return num;
+		}
+		else { return value; }
+	}
+
+	if (inSize == 11) {
+		num = value & 0x400;
+		if (num > 0) {
+			num = value | 0xfffffc00;
+			return num;
+		}
+		else { return value; }
+	}
+
+	
 }
 
 void process_instruction() {
@@ -471,11 +522,33 @@ void process_instruction() {
 			CURRENT_LATCHES.REGS[dr] = sum;
 		}
 
-		setcc(dr);
+		setcc(sum);
 	}
 
 	else if (opcode == 0x5000) {
 		/*	AND	*/
+		int andOp;
+		int dr = instr & 0x0e000;
+		dr = dr >> 9;
+
+		int sr1 = instr & 0x01c0;
+		sr1 = sr1 >> 6;
+
+		if ((instr & 0x0020) == 0) {
+			int sr2 = instr & 0x0007;
+			andOp = CURRENT_LATCHES.REGS[sr1] & CURRENT_LATCHES.REGS[sr2];
+			CURRENT_LATCHES.REGS[dr] = andOp;
+		}
+
+		else {
+			int imme = instr & 0x001f;
+			imme = convert(5, imme, -1);
+			andOp = CURRENT_LATCHES.REGS[sr1] & imme;
+			andOp = Low16bits(andOp);
+			CURRENT_LATCHES.REGS[dr] = andOp;
+		}
+		setcc(andOp);
+
 	}
 
 	else if (opcode == 0xC000) {
@@ -503,7 +576,10 @@ void process_instruction() {
 	}
 
 	else if (opcode == 0xC000) {
-		/*	RET	*/
+		/*	JMP or RET	*/
+		int reg = instr & 0x01c0;
+		reg = reg >> 6;
+		CURRENT_LATCHES.PC = CURRENT_LATCHES.REGS[reg];
 	}
 
 	else if (opcode == 0x8000) {
