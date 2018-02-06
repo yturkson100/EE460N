@@ -432,64 +432,63 @@ void process_instruction() {
 		/*	BRANCH	*/
 	}
 
-	if (opcode == 0x0001) {
+	if (opcode == 0x1000) {
 		/*	ADD	*/
+
+
+
 	}
 
-	if (opcode == 0x0101) {
+	if (opcode == 0x5000) {
 		/*	AND	*/
 	}
 
-	if (opcode == 0x1100) {
+	if (opcode == 0xC000) {
 		/*	JMP	*/
 	}
 
-	if (opcode == 0X0100) {
+	if (opcode == 0X4000) {
 		/*	JSR	*/
 	}
 
-	if (opcode == 0x0010) {
+	if (opcode == 0x2000) {
 		/*	LDB	*/
 	}
 
-	if (opcode == 0x0110) {
+	if (opcode == 0x6000) {
 		/*	LDW	*/
 	}
 
-	if (opcode == 0x1110) {
+	if (opcode == 0xE000) {
 		/*	LEA	*/
 	}
 
-	if (opcode == 0x1001) {
-		/*	NOT	*/
+	if (opcode == 0x9000) {
+		/*	NOT	& XOR */
 	}
 
-	if (opcode == 0x1100) {
+	if (opcode == 0xC000) {
 		/*	RET	*/
 	}
 
-	if (opcode == 0x1000) {
+	if (opcode == 0x8000) {
 		/*	RTI	*/
 	}
 
-	if (opcode == 0x1101) {
+	if (opcode == 0xD000) {
 		/*	SHF	*/
 	}
 
-	if (opcode == 0x0011) {
+	if (opcode == 0x3000) {
 		/*	STB	*/
 	}
 
-	if (opcode == 0x0111) {
+	if (opcode == 0x7000) {
 		/*	STW	*/
 	}
 
-	if (opcode == 0x1111) {
+	if (opcode == 0xF000) {
 		/*	TRAP	*/
-	}
-
-	if (opcode == 0x1001) {
-		/*	XOR	*/
 	}
 
 }
