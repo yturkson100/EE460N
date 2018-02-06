@@ -416,5 +416,81 @@ void process_instruction() {
 	*       -Update NEXT_LATCHES
 	*/
 
+	int lowBits = MEMORY[CURRENT_LATCHES.PC][0];
+	int highBits = MEMORY[CURRENT_LATCHES.PC][1];
+
+	int instr = 0x0000;
+	int opcode;
+
+	instr = instr | highBits;
+	instr = instr << 8;
+	instr = instr | lowBits;
+
+	opcode = instr & 0xf000;
+
+	if (opcode == 0x0000) {
+		/*	BRANCH	*/
+	}
+
+	if (opcode == 0x0001) {
+		/*	ADD	*/
+	}
+
+	if (opcode == 0x0101) {
+		/*	AND	*/
+	}
+
+	if (opcode == 0x1100) {
+		/*	JMP	*/
+	}
+
+	if (opcode == 0X0100) {
+		/*	JSR	*/
+	}
+
+	if (opcode == 0x0010) {
+		/*	LDB	*/
+	}
+
+	if (opcode == 0x0110) {
+		/*	LDW	*/
+	}
+
+	if (opcode == 0x1110) {
+		/*	LEA	*/
+	}
+
+	if (opcode == 0x1001) {
+		/*	NOT	*/
+	}
+
+	if (opcode == 0x1100) {
+		/*	RET	*/
+	}
+
+	if (opcode == 0x1000) {
+		/*	RTI	*/
+	}
+
+	if (opcode == 0x1101) {
+		/*	SHF	*/
+	}
+
+	if (opcode == 0x0011) {
+		/*	STB	*/
+	}
+
+	if (opcode == 0x0111) {
+		/*	STW	*/
+	}
+
+	if (opcode == 0x1111) {
+		/*	TRAP	*/
+	}
+
+	if (opcode == 0x1001) {
+		/*	XOR	*/
+	}
+
 }
 
