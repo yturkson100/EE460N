@@ -1289,7 +1289,7 @@ void secondParse() {
 }
 
 
-int main(int argc, char* argv[]) {
+int main1(int argc, char* argv[]) {
     if(parseArgs(argc,argv)){
         /* open the source file */
         infile = fopen(argv[1], "r");
@@ -1331,3 +1331,4 @@ int main(int argc, char* argv[]) {
     }
 
 }
+

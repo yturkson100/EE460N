@@ -491,7 +491,7 @@ void process_instruction() {
 		/*	BRANCH	*/
 	}
 
-	if (opcode == 0x1000) {
+	else if (opcode == 0x1000) {
 		/*	ADD	*/
 		int sum;
 		int dr = instr & 0x0e000;
@@ -508,7 +508,7 @@ void process_instruction() {
 		
 		else {
 			int imme = instr & 0x001f;
-			imme = convert(5, imme, -1);
+			imme = sExt(5, imme);
 			sum = CURRENT_LATCHES.REGS[sr1] + imme;
 			sum = Low16bits(sum);
 			CURRENT_LATCHES.REGS[dr] = sum;
@@ -535,7 +535,7 @@ void process_instruction() {
 
 		else {
 			int imme = instr & 0x001f;
-			imme = convert(5, imme, -1);
+			imme = sExt(5, imme);
 			andOp = CURRENT_LATCHES.REGS[sr1] & imme;
 			andOp = Low16bits(andOp);
 			CURRENT_LATCHES.REGS[dr] = andOp;
@@ -543,10 +543,6 @@ void process_instruction() {
 		setcc(andOp);
 		CURRENT_LATCHES.PC = CURRENT_LATCHES.PC + 2;
 
-	}
-
-	else if (opcode == 0xC000) {
-		/*	JMP	*/
 	}
 
 	else if (opcode == 0X4000) {
@@ -567,6 +563,34 @@ void process_instruction() {
 
 	else if (opcode == 0x9000) {
 		/*	NOT	& XOR */
+		int dr = instr & 0x0e000;
+		dr = dr >> 9;
+
+		int sr = instr & 0x01c0;
+		sr = sr >> 6;
+
+		int xorOp;
+		int notOp = instr & 0x3f;
+		if (notOp == 0x3f) {
+			CURRENT_LATCHES.REGS[dr] = ~ CURRENT_LATCHES.REGS[sr];
+		}
+
+		else if ((instr & 0x0020) == 0) {
+			int sr2 = instr & 0x0007;
+			xorOp = CURRENT_LATCHES.REGS[sr] ^ CURRENT_LATCHES.REGS[sr2];
+			CURRENT_LATCHES.REGS[dr] = xorOp;
+		}
+		else if ((instr & 0x0020) > 0) {
+			int imme = instr & 0x001f;
+			imme = sExt(5, imme);
+			xorOp = CURRENT_LATCHES.REGS[sr] ^ imme;
+			xorOp = Low16bits(xorOp);
+			CURRENT_LATCHES.REGS[dr] = xorOp;
+		}
+
+		setcc(xorOp);
+		CURRENT_LATCHES.PC = CURRENT_LATCHES.PC + 2;
+
 	}
 
 	else if (opcode == 0xC000) {
@@ -595,6 +619,8 @@ void process_instruction() {
 	else if (opcode == 0xF000) {
 		/*	TRAP	*/
 	}
+
+	NEXT_LATCHES = CURRENT_LATCHES;
 
 }
 
